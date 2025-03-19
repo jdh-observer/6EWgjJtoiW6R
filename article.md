@@ -74,14 +74,11 @@ Audio data is not inherently narrative or discursive, though they often come to 
 
 
 ```python jdh={"module": "object", "object": {"source": ["Waveform"], "type": "image"}} tags=["hermeneutics", "narrative", "figure-waveform-*"]
-import matplotlib
-matplotlib.use('Agg')
-import requests
-import io
-import librosa
-import librosa.display
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np 
+import requests
+import librosa
+import io
 from IPython.display import Image, display, Audio
 
 def plot_waveform_and_play_audio(mp3_url):

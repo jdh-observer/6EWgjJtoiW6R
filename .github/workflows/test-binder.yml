@@ -1,0 +1,133 @@
+name: Test MyBinder Launch and Notebook Execution
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  # Optional: Run on a schedule
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sundays at midnight
+  # Manual trigger with input parameters
+  workflow_dispatch:
+    inputs:
+      notebook_name:
+        description: 'Name of the notebook to execute (default: article.ipynb)'
+        required: false
+        default: 'article.ipynb'
+
+env:
+  NOTEBOOK_NAME: ${{ github.event.inputs.notebook_name || 'article.ipynb' }}
+
+jobs:
+  test-binder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests nbclient nbformat jupyter-client
+          # Install additional dependencies that your notebook needs
+          # For example:
+          # pip install pandas numpy matplotlib seaborn scikit-learn
+          
+      - name: Test Binder launch
+        run: |
+          python -c "
+import requests
+import json
+import time
+import sys
+import os
+
+# Get repository info from GitHub context
+repo = os.environ.get('GITHUB_REPOSITORY')
+ref = os.environ.get('GITHUB_SHA')
+
+print(f'Testing Binder launch for {repo} at {ref}')
+
+# Build the Binder URL
+binder_url = f'https://mybinder.org/build/gh/{repo}/{ref}'
+
+# Request the build
+r = requests.get(binder_url, stream=True)
+for line in r.iter_lines():
+    if line:
+        data = json.loads(line.decode('utf-8'))
+        phase = data.get('phase')
+        if phase:
+            print(f'Build phase: {phase}')
+        if phase == 'ready':
+            print('✅ Binder build successful!')
+            break
+        elif phase == 'failed':
+            print('❌ Binder build failed!')
+            sys.exit(1)
+          "
+          
+      - name: Execute notebook
+        run: |
+          python -c "
+import os
+import sys
+from nbclient import NotebookClient
+import nbformat
+
+# Get the notebook name from environment variable
+notebook_name = os.environ.get('NOTEBOOK_NAME', 'article.ipynb')
+print(f'Will execute notebook: {notebook_name}')
+
+# Check if the notebook exists
+if not os.path.exists(notebook_name):
+    # Try to find it in subdirectories
+    import glob
+    notebooks = glob.glob(f'**/{notebook_name}', recursive=True)
+    if notebooks:
+        notebook_name = notebooks[0]
+        print(f'Found notebook at: {notebook_name}')
+    else:
+        print(f'❌ Notebook {notebook_name} not found in the repository!')
+        sys.exit(1)
+
+# Install dependencies from requirements.txt if it exists
+if os.path.exists('requirements.txt'):
+    print('Installing dependencies from requirements.txt')
+    os.system('pip install -r requirements.txt')
+
+# Install dependencies from environment.yml if it exists (for conda environments)
+if os.path.exists('environment.yml'):
+    print('Installing dependencies from environment.yml')
+    os.system('pip install pyyaml')
+    import yaml
+    with open('environment.yml', 'r') as f:
+        env = yaml.safe_load(f)
+        if 'dependencies' in env:
+            for dep in env['dependencies']:
+                if isinstance(dep, str) and not dep.startswith('python'):
+                    os.system(f'pip install {dep}')
+                elif isinstance(dep, dict) and 'pip' in dep:
+                    for pip_dep in dep['pip']:
+                        os.system(f'pip install {pip_dep}')
+
+# Execute the notebook
+print(f'Executing notebook: {notebook_name}')
+try:
+    with open(notebook_name) as f:
+        nb = nbformat.read(f, as_version=4)
+    
+    # Execute notebook
+    client = NotebookClient(nb, timeout=600)
+    client.execute()
+    
+    print(f'✅ Successfully executed notebook: {notebook_name}')
+except Exception as e:
+    print(f'❌ Failed to execute notebook {notebook_name}: {str(e)}')
+    sys.exit(1)
+          "
