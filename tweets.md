@@ -1,3 +1,5 @@
+Post thread:
+
 1. Methodology-focused
 How can historians work with thousands of hours of sound?
 This article introduces segmentation & dimensionality reduction methods for large-scale radio archives, showing how computational analysis reveals hidden structures in public service broadcasting.
