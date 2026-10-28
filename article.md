@@ -628,7 +628,7 @@ There are at least two possible interpretations of these results. At first glanc
 
 Due to the status of these files, the reader will regrettably not be able to examine the acoustic implications of this change. During my research, I have been able to closely listen to specific sound segments from each cluster, and the experience has tended to align with the plotted results, but only in the sense of spectral character. The perceptual experience of different spectral ranges is not reducible to the entirety of the aural experience, but we can certainly perceive the significant familiarity in the sound. Nevertheless, to give further credence to these results, we can proceed by comparison with the object classification method. In the following plot, the number of identified unique sounds from each data set has been measured. Since plotting the results on the dimension reduction map did not render any significant insight, the results are here simply calculated, in order to compare with the spectral distribution displayed above.
 
-```python tags=["figure_sound_types*"]
+```python tags=["figure_sound_types-*"]
 from IPython.display import Image, display
 metadata={
         "jdh": {
